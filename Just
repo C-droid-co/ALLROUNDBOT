@@ -1,0 +1,7 @@
+/group-management-bot
+├── bot.py
+├── commands/
+├── db/
+├── config/
+├── deploy/
+└── requirements.txt
