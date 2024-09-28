@@ -41,3 +41,16 @@ async def toggle_welcome_status(event):
         await event.respond(f"Welcome messages are now {status}.")
     else:
         await event.respond("Error toggling the welcome message status. Try again.")
+
+
+# Listener for new users joining the group
+@client.on(events.ChatAction)
+async def on_user_join(event):
+    if event.user_added or event.user_joined:
+        group_id = event.chat_id
+        welcome_message, is_enabled = get_welcome_message(group_id)
+        
+        # If welcome messages are enabled, send the welcome message
+        if is_enabled and welcome_message:
+            for user in event.users:
+                await client.send_message(event.chat_id, f"{welcome_message} {user.first_name}")
