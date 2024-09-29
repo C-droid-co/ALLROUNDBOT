@@ -33,3 +33,52 @@ async def restrict_messages(event):
         if event.sender_id not in [admin.user_id for admin in await event.get_chat().get_admins()]:
             await event.delete()  # Delete the message
             await event.respond("The group is locked. Only admins can send messages.")
+
+
+# Dictionary to store lock statuses
+locks = {
+    "voice": False,
+    "audio": False,
+    "image": False,
+    "film": False,
+    "file": False,
+    "contact": False,
+    "game": False,
+    "location": False,
+    "sticker": False,
+    "gif": False,
+    "forward": False,
+    "link": False,
+    "site": False,
+    "@": False,
+    "welcome": False,
+    "user_left_message": False,
+    "join_message": False,
+    "add_user_message": False,
+    "bot": False,
+    "delete_welcome": False,
+    "warn": False,
+    "poll": False,
+    "inline_button": False,
+    "robot_command": False,
+    "chat": False,
+    "hashtag": False,
+}
+
+@client.on(events.NewMessage(pattern='/lock (.*)'))
+async def lock_content(event):
+    content_type = event.pattern_match.group(1).strip()
+    if content_type in locks:
+        locks[content_type] = True
+        await event.respond(f"{content_type.capitalize()} locked.")
+    else:
+        await event.respond("Invalid content type.")
+
+@client.on(events.NewMessage(pattern='/unlock (.*)'))
+async def unlock_content(event):
+    content_type = event.pattern_match.group(1).strip()
+    if content_type in locks:
+        locks[content_type] = False
+        await event.respond(f"{content_type.capitalize()} unlocked.")
+    else:
+        await event.respond("Invalid content type.")
