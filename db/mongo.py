@@ -97,3 +97,29 @@ def is_spamming(group_id, user_id, message_limit=5, time_limit=10):
     except Exception as e:
         print(f"Error checking spam: {e}")
         return False
+
+# Function to set the group lock status
+def set_group_lock(group_id, lock_status):
+    try:
+        db = connect_mongo(os.getenv("MONGO_URI"))
+        db.group_settings.update_one(
+            {"group_id": group_id},
+            {"$set": {"locked": lock_status}},
+            upsert=True
+        )
+        return True
+    except Exception as e:
+        print(f"Error setting group lock: {e}")
+        return False
+
+# Function to get the group lock status
+def get_group_lock(group_id):
+    try:
+        db = connect_mongo(os.getenv("MONGO_URI"))
+        record = db.group_settings.find_one({"group_id": group_id})
+        if record and "locked" in record:
+            return record["locked"]
+        return False
+    except Exception as e:
+        print(f"Error getting group lock: {e}")
+        return False
