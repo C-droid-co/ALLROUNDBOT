@@ -33,3 +33,32 @@ async def poll_vote(event):
             await event.respond(f"Vote for '{poll['options'][int(vote) - 1]}' counted!")
         else:
             await event.respond("Invalid vote. Please reply with the option number.")
+
+
+from telethon import events
+
+# Start a poll
+@client.on(events.NewMessage(pattern='!poll (.+)'))
+async def create_poll(event):
+    poll_question = event.message.text.split(maxsplit=1)[1]
+    # Code to save the poll question in the database or file
+    await event.respond(f"Poll created: {poll_question}\nVote with !vote <option_number>")
+
+# Vote in a poll
+@client.on(events.NewMessage(pattern='!vote (\\d+)'))
+async def vote(event):
+    option_number = int(event.message.text.split()[1])
+    user_id = event.sender_id
+    # Code to save the vote in the database or file
+    await event.respond(f"Vote recorded: Option {option_number}")
+
+# Show poll results
+@client.on(events.NewMessage(pattern='!pollresults'))
+async def show_poll_results(event):
+    # Code to retrieve poll results from the database or file
+    poll_results = {}  # Replace with actual results retrieval logic
+    if poll_results:
+        results_message = "\n".join(f"Option {key}: {value} votes" for key, value in poll_results.items())
+        await event.respond(f"Poll Results:\n{results_message}")
+    else:
+        await event.respond("No poll results available.")
