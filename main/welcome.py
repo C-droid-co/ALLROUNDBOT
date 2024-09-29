@@ -330,3 +330,73 @@ async def welcome_or_farewell(event):
     elif event.user_left:
         await event.respond(farewell_message)
 
+from telethon import events
+from pymongo import MongoClient
+from datetime import datetime
+
+# MongoDB Setup
+client = MongoClient('mongodb://localhost:27017/')  # Replace with actual MongoDB URI
+db = client['bot_database']  # Replace with your DB
+welcome_col = db['welcome_messages']  # Collection for welcome messages
+
+# Welcome message template
+default_welcome_msg = "Hello !name, welcome!"
+
+# Command: Activate welcome
+@bot.on(events.NewMessage(pattern=r'!open welcome'))
+async def activate_welcome(event):
+    welcome_col.update_one({"chat_id": event.chat_id}, {"$set": {"welcome_active": True}}, upsert=True)
+    await event.reply("Welcome messages activated.")
+
+# Command: Deactivate welcome
+@bot.on(events.NewMessage(pattern=r'!lock welcome'))
+async def deactivate_welcome(event):
+    welcome_col.update_one({"chat_id": event.chat_id}, {"$set": {"welcome_active": False}}, upsert=True)
+    await event.reply("Welcome messages deactivated.")
+
+# Command: Set custom welcome text
+@bot.on(events.NewMessage(pattern=r'!welcome (.+)'))
+async def set_welcome(event):
+    custom_msg = event.pattern_match.group(1)
+    welcome_col.update_one({"chat_id": event.chat_id}, {"$set": {"welcome_msg": custom_msg}}, upsert=True)
+    await event.reply(f"Custom welcome message set: {custom_msg}")
+
+# Command: Greet new members
+@bot.on(events.ChatAction)
+async def greet_new_member(event):
+    if event.user_joined or event.user_added:
+        welcome_data = welcome_col.find_one({"chat_id": event.chat_id})
+        if welcome_data and welcome_data.get('welcome_active', False):
+            welcome_msg = welcome_data.get('welcome_msg', default_welcome_msg)
+            welcome_msg = welcome_msg.replace('!name', event.user.first_name)
+            await event.reply(welcome_msg)
+
+# Command: Add button to welcome text
+@bot.on(events.NewMessage(pattern=r'!welcome_btn (.+)'))
+async def add_welcome_button(event):
+    url = event.pattern_match.group(1)
+    welcome_col.update_one({"chat_id": event.chat_id}, {"$set": {"welcome_button": url}}, upsert=True)
+    await event.reply(f"Button added to welcome message: {url}")
+
+# Command: Delete welcome message after some time
+@bot.on(events.NewMessage(pattern=r'!open Delete welcome'))
+async def activate_auto_delete(event):
+    welcome_col.update_one({"chat_id": event.chat_id}, {"$set": {"auto_delete_welcome": True}}, upsert=True)
+    await event.reply("Auto-delete welcome messages activated.")
+
+@bot.on(events.NewMessage(pattern=r'!lock Delete welcome'))
+async def deactivate_auto_delete(event):
+    welcome_col.update_one({"chat_id": event.chat_id}, {"$set": {"auto_delete_welcome": False}}, upsert=True)
+    await event.reply("Auto-delete welcome messages deactivated.")
+
+# Command: Show time and date in welcome message
+@bot.on(events.NewMessage(pattern=r'!open Welcome date'))
+async def activate_welcome_date(event):
+    welcome_col.update_one({"chat_id": event.chat_id}, {"$set": {"show_date": True}}, upsert=True)
+    await event.reply("Date and time will be shown in welcome messages.")
+
+@bot.on(events.NewMessage(pattern=r'!lock Welcome date'))
+async def deactivate_welcome_date(event):
+    welcome_col.update_one({"chat_id": event.chat_id}, {"$set": {"show_date": False}}, upsert=True)
+    await event.reply("Date and time removed from welcome messages.")
+
