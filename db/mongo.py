@@ -1,4 +1,6 @@
 from pymongo import MongoClient
+import os
+import time
 
 def connect_mongo(uri):
     try:
@@ -48,4 +50,50 @@ def toggle_welcome(group_id, status):
         return True
     except Exception as e:
         print(f"Error toggling welcome status: {e}")
+        return False
+
+import time
+
+# Function to add a message record for a user
+def add_message_record(group_id, user_id):
+    try:
+        db = connect_mongo(os.getenv("MONGO_URI"))
+        timestamp = time.time()
+        db.spam_records.update_one(
+            {"group_id": group_id, "user_id": user_id},
+            {"$push": {"messages": timestamp}},
+            upsert=True
+        )
+        return True
+    except Exception as e:
+        print(f"Error adding message record: {e}")
+        return False
+
+# Function to check if a user is spamming
+def is_spamming(group_id, user_id, message_limit=5, time_limit=10):
+    try:
+        db = connect_mongo(os.getenv("MONGO_URI"))
+        record = db.spam_records.find_one({"group_id": group_id, "user_id": user_id})
+        
+        if record:
+            messages = record["messages"]
+            # Filter messages that are within the time limit
+            recent_messages = [msg for msg in messages if time.time() - msg < time_limit]
+            
+            if len(recent_messages) >= message_limit:
+                # If user is spamming, remove old records
+                db.spam_records.update_one(
+                    {"group_id": group_id, "user_id": user_id},
+                    {"$set": {"messages": recent_messages}}
+                )
+                return True
+            
+            # Update messages to reflect recent activity
+            db.spam_records.update_one(
+                {"group_id": group_id, "user_id": user_id},
+                {"$set": {"messages": recent_messages}}
+            )
+        return False
+    except Exception as e:
+        print(f"Error checking spam: {e}")
         return False
