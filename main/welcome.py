@@ -201,3 +201,43 @@ async def welcome_new_members(event):
         if auto_delete_welcome:
             await asyncio.sleep(10)  # Change the number to your desired time in seconds
             await message.delete()
+
+
+import random
+
+# Initialize a list to hold random welcome messages
+random_welcome_messages = []
+
+@client.on(events.NewMessage(pattern='/random_welcome (.+)'))
+async def add_random_welcome(event):
+    message = event.pattern_match.group(1)
+    random_welcome_messages.append(message)
+    await event.respond(f"Added random welcome message: {message}")
+
+@client.on(events.NewMessage(pattern='!!random_welcome'))
+async def clear_random_welcome(event):
+    random_welcome_messages.clear()
+    await event.respond("Cleared all random welcome messages.")
+
+@client.on(events.ChatAction)
+async def welcome_new_members(event):
+    if event.user_added or event.user_joined:
+        new_member = event.users[0]
+        group_id = event.chat_id
+
+        # Determine which welcome message to use
+        if random_welcome_messages:
+            welcome_message = random.choice(random_welcome_messages).replace('!name', new_member.first_name)
+        else:
+            welcome_message = custom_welcome_message.replace('!name', new_member.first_name)
+
+        # Check if time and date should be shown
+        if show_time_and_date:
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            welcome_message += f"\nCurrent Time: {current_time}"
+
+        message = await event.respond(welcome_message)
+
+        if auto_delete_welcome:
+            await asyncio.sleep(10)  # Change the number to your desired time in seconds
+            await message.delete()
