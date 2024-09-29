@@ -79,3 +79,48 @@ async def vote(event):
     vote_number = event.message.text.split(maxsplit=1)[1]
     # Code to save the vote in the database or file
     await event.respond(f"Vote registered: Option {vote_number}")
+
+
+polls = {}
+
+# Command to create a poll
+@client.on(events.NewMessage(pattern='!poll (.+)'))
+async def create_poll(event):
+    poll_question = event.message.text.split(maxsplit=1)[1]
+    poll_id = event.id
+
+    # Store the poll question
+    polls[poll_id] = {
+        'question': poll_question,
+        'votes': {}
+    }
+
+    await event.respond(f"Poll created: {poll_question}\nUse !vote {poll_id} <option> to vote.")
+
+# Command to vote in a poll
+@client.on(events.NewMessage(pattern='!vote (\d+) (.+)'))
+async def vote(event):
+    poll_id = int(event.message.text.split()[1])
+    option = event.message.text.split(maxsplit=2)[2]
+
+    if poll_id in polls:
+        if option not in polls[poll_id]['votes']:
+            polls[poll_id]['votes'][option] = []
+        polls[poll_id]['votes'][option].append(event.sender_id)
+        await event.respond(f"Vote recorded for option '{option}' in poll {poll_id}.")
+    else:
+        await event.respond("Poll not found!")
+
+# Command to show poll results
+@client.on(events.NewMessage(pattern='!results (\d+)'))
+async def poll_results(event):
+    poll_id = int(event.message.text.split()[1])
+    
+    if poll_id in polls:
+        results = polls[poll_id]['votes']
+        result_text = f"Results for Poll {poll_id}:\n"
+        for option, voters in results.items():
+            result_text += f"{option}: {len(voters)} votes\n"
+        await event.respond(result_text)
+    else:
+        await event.respond("Poll not found!")
