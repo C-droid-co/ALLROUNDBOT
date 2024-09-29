@@ -65,3 +65,28 @@ async def welcome_new_members(event):
         welcome_message = f"Welcome {new_member.first_name}! Please read the group rules and enjoy your stay!"
 
         await event.respond(welcome_message)
+
+
+# Initialize a variable to hold the custom welcome message
+custom_welcome_message = "Welcome to the group!"
+
+@client.on(events.NewMessage(pattern='/set_welcome'))
+async def set_welcome(event):
+    global custom_welcome_message
+    new_message = event.message.message.split(' ', 1)
+    if len(new_message) < 2:
+        await event.respond("Please provide a welcome message.")
+        return
+    custom_welcome_message = new_message[1]
+    await event.respond(f"Custom welcome message set to: {custom_welcome_message}")
+
+@client.on(events.ChatAction)
+async def welcome_new_members(event):
+    if event.user_added or event.user_joined:
+        new_member = event.users[0]
+        group_id = event.chat_id
+        
+        # Use the custom welcome message
+        welcome_message = custom_welcome_message.replace('!name', new_member.first_name)
+
+        await event.respond(welcome_message)
