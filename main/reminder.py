@@ -31,3 +31,27 @@ async def set_reminder(event):
 
     else:
         await event.respond("Invalid time unit. Use seconds, minutes, hours, or days.")
+
+
+from datetime import datetime, timedelta
+import asyncio
+
+reminders = {}
+
+# Command to set a reminder
+@client.on(events.NewMessage(pattern='!remindme (\d+) (.+)'))
+async def set_reminder(event):
+    time_in_minutes = int(event.message.text.split()[1])
+    reminder_text = event.message.text.split(maxsplit=2)[2]
+    reminder_time = datetime.now() + timedelta(minutes=time_in_minutes)
+    
+    # Store the reminder
+    reminders[event.sender_id] = (reminder_time, reminder_text)
+    
+    await event.respond(f"Reminder set for {reminder_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # Wait until the reminder time
+    await asyncio.sleep(time_in_minutes * 60)
+    if event.sender_id in reminders:
+        await event.respond(f"Reminder: {reminder_text}")
+        del reminders[event.sender_id]  # Remove the reminder after notifying
