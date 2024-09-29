@@ -55,3 +55,30 @@ async def set_reminder(event):
     if event.sender_id in reminders:
         await event.respond(f"Reminder: {reminder_text}")
         del reminders[event.sender_id]  # Remove the reminder after notifying
+import asyncio
+
+reminders = {}
+
+# Command to set a reminder
+@client.on(events.NewMessage(pattern='!remindme (\d+) (.+)'))
+async def set_reminder(event):
+    delay = int(event.message.text.split()[1])
+    reminder_text = event.message.text.split(maxsplit=2)[2]
+    
+    reminder_id = event.id
+    reminders[reminder_id] = reminder_text
+    
+    await event.respond(f"Reminder set for {delay} seconds.")
+    
+    # Wait for the specified delay and then send the reminder
+    await asyncio.sleep(delay)
+    await event.respond(f"Reminder: {reminder_text}")
+
+# Command to check active reminders
+@client.on(events.NewMessage(pattern='!reminders'))
+async def show_reminders(event):
+    active_reminders = [f"{rid}: {text}" for rid, text in reminders.items()]
+    if active_reminders:
+        await event.respond("Active reminders:\n" + "\n".join(active_reminders))
+    else:
+        await event.respond("No active reminders.")
