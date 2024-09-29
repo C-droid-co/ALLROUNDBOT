@@ -82,3 +82,28 @@ async def unlock_content(event):
         await event.respond(f"{content_type.capitalize()} unlocked.")
     else:
         await event.respond("Invalid content type.")
+# Variables to track locked content types
+locked_content = set()
+
+@client.on(events.NewMessage(pattern='/lock (.*)'))
+async def lock_content(event):
+    content_type = event.pattern_match.group(1).strip()
+    locked_content.add(content_type)
+    await event.respond(f"{content_type.capitalize()} has been locked!")
+
+@client.on(events.NewMessage(pattern='/unlock (.*)'))
+async def unlock_content(event):
+    content_type = event.pattern_match.group(1).strip()
+    if content_type in locked_content:
+        locked_content.remove(content_type)
+        await event.respond(f"{content_type.capitalize()} has been unlocked!")
+    else:
+        await event.respond(f"{content_type.capitalize()} is not locked.")
+
+@client.on(events.NewMessage)
+async def check_locked_content(event):
+    if event.message.media:
+        media_type = event.message.media.__class__.__name__.lower()
+        if media_type in locked_content:
+            await event.delete()  # Delete the message
+            await event.respond("This type of content is locked.")
