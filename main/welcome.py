@@ -54,3 +54,14 @@ async def on_user_join(event):
         if is_enabled and welcome_message:
             for user in event.users:
                 await client.send_message(event.chat_id, f"{welcome_message} {user.first_name}")
+
+@client.on(events.ChatAction)
+async def welcome_new_members(event):
+    if event.user_added or event.user_joined:
+        new_member = event.users[0]
+        group_id = event.chat_id
+        
+        # Fetch the welcome message (you can customize this)
+        welcome_message = f"Welcome {new_member.first_name}! Please read the group rules and enjoy your stay!"
+
+        await event.respond(welcome_message)
