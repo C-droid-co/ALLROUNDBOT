@@ -400,3 +400,49 @@ async def deactivate_welcome_date(event):
     welcome_col.update_one({"chat_id": event.chat_id}, {"$set": {"show_date": False}}, upsert=True)
     await event.reply("Date and time removed from welcome messages.")
 
+from telethon import events
+from pymongo import MongoClient
+import datetime
+
+# MongoDB connection
+client = MongoClient('mongodb://localhost:27017/')
+db = client['group_management']
+welcome_collection = db['welcome_messages']
+
+async def send_welcome(event):
+    # Check if welcome is activated
+    welcome_status = welcome_collection.find_one({"group_id": event.chat_id, "feature": "welcome_status"})
+    if welcome_status and welcome_status['status'] == 'active':
+        welcome_msg = welcome_collection.find_one({"group_id": event.chat_id, "feature": "welcome_text"})
+        if welcome_msg:
+            welcome_text = welcome_msg['text'].replace('!name', event.sender.first_name)
+            await event.reply(welcome_text)
+
+# Telethon event handler for new users
+@client.on(events.ChatAction)
+async def handler(event):
+    if event.user_joined or event.user_added:
+        await send_welcome(event)
+
+# Command to activate/deactivate the welcome message
+@client.on(events.NewMessage(pattern=r'!open welcome|!lock welcome'))
+async def toggle_welcome(event):
+    group_id = event.chat_id
+    command = event.raw_text.strip()
+
+    if command == '!open welcome':
+        welcome_collection.update_one({"group_id": group_id, "feature": "welcome_status"}, {"$set": {"status": "active"}}, upsert=True)
+        await event.respond('Welcome message activated.')
+    elif command == '!lock welcome':
+        welcome_collection.update_one({"group_id": group_id, "feature": "welcome_status"}, {"$set": {"status": "inactive"}}, upsert=True)
+        await event.respond('Welcome message deactivated.')
+
+# Command to set a custom welcome message
+@client.on(events.NewMessage(pattern=r'!welcome '))
+async def set_welcome(event):
+    group_id = event.chat_id
+    welcome_text = event.raw_text[len('!welcome '):]
+
+    welcome_collection.update_one({"group_id": group_id, "feature": "welcome_text"}, {"$set": {"text": welcome_text}}, upsert=True)
+    await event.respond(f"Custom welcome message set: {welcome_text}")
+
