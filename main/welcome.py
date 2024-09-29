@@ -305,3 +305,28 @@ async def welcome_new_member(event):
     else:
         await event.respond("No welcome messages available.")
 
+
+
+# Variables for welcome and farewell messages
+welcome_message = "Welcome to the group!"
+farewell_message = "Goodbye! We'll miss you!"
+
+@client.on(events.NewMessage(pattern='/set_welcome (.*)'))
+async def set_welcome(event):
+    global welcome_message
+    welcome_message = event.pattern_match.group(1).strip()
+    await event.respond("Welcome message updated!")
+
+@client.on(events.NewMessage(pattern='/set_farewell (.*)'))
+async def set_farewell(event):
+    global farewell_message
+    farewell_message = event.pattern_match.group(1).strip()
+    await event.respond("Farewell message updated!")
+
+@client.on(events.ChatAction)
+async def welcome_or_farewell(event):
+    if event.user_joined:
+        await event.respond(welcome_message)
+    elif event.user_left:
+        await event.respond(farewell_message)
+
