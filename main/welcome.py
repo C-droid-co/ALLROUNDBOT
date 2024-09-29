@@ -241,3 +241,67 @@ async def welcome_new_members(event):
         if auto_delete_welcome:
             await asyncio.sleep(10)  # Change the number to your desired time in seconds
             await message.delete()
+
+from datetime import datetime
+
+# Initialize a variable to control the time and date display
+show_time_and_date = False
+
+@client.on(events.NewMessage(pattern='/toggle_time_date'))
+async def toggle_time_date(event):
+    global show_time_and_date
+    show_time_and_date = not show_time_and_date
+    status = "enabled" if show_time_and_date else "disabled"
+    await event.respond(f"Current time and date display is now {status}.")
+
+
+# Initialize a list to store random welcome messages
+random_welcome_messages = []
+
+@client.on(events.NewMessage(pattern='/add_random_welcome (.+)'))
+async def add_random_welcome(event):
+    global random_welcome_messages
+    message = event.pattern_match.group(1)
+    random_welcome_messages.append(message)
+    await event.respond(f"Added random welcome message: {message}")
+
+@client.on(events.NewMessage(pattern='/clear_random_welcome'))
+async def clear_random_welcome(event):
+    global random_welcome_messages
+    random_welcome_messages.clear()
+    await event.respond("Cleared all random welcome messages.")
+
+@client.on(events.NewMessage(pattern='/welcome_new_member'))
+async def welcome_new_member(event):
+    if random_welcome_messages:
+        welcome_message = random.choice(random_welcome_messages)
+        await event.respond(welcome_message)
+    else:
+        await event.respond("No welcome messages available.")
+
+@client.on(events.NewMessage(pattern='/set_welcome_media'))
+async def set_welcome_media(event):
+    if event.message.reply_to:
+        media = event.message.reply_to.media
+        if media:
+            await event.respond("Welcome media set successfully.")
+            # Store media ID in the database or in memory
+            # For simplicity, we can use a variable here
+            global welcome_media
+            welcome_media = media
+        else:
+            await event.respond("Please reply to the media you want to set as welcome.")
+    else:
+        await event.respond("Please reply to a media message.")
+
+@client.on(events.NewMessage(pattern='/welcome_new_member'))
+async def welcome_new_member(event):
+    if random_welcome_messages:
+        welcome_message = random.choice(random_welcome_messages)
+        await event.respond(welcome_message)
+
+        if welcome_media:
+            await event.respond(welcome_media)
+    else:
+        await event.respond("No welcome messages available.")
+
