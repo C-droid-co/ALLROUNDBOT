@@ -1,36 +1,31 @@
-import os
 from telethon import TelegramClient, events
-from dotenv import load_dotenv
-from db.mongo import connect_mongo
+from config import BOT_TOKEN
+from database import add_user, get_user, remove_user
 
-# Load environment variables
-load_dotenv()
-api_id = os.getenv("API_ID")  # API ID from Telegram
-api_hash = os.getenv("API_HASH")  # API Hash from Telegram
-bot_token = os.getenv("BOT_TOKEN")  # Your bot token
-mongo_uri = os.getenv("MONGO_URI")  # MongoDB URI
+# Initialize the bot client
+bot = TelegramClient('bot', api_id=YOUR_API_ID, api_hash=YOUR_API_HASH).start(bot_token=BOT_TOKEN)
 
-# Create bot instance
-client = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
-
-# MongoDB connection
-db = connect_mongo(mongo_uri)
-
-@client.on(events.NewMessage(pattern='/start'))
+# /start command
+@bot.on(events.NewMessage(pattern='/start'))
 async def start(event):
-    await event.respond("Welcome to Group Management Bot! Type /help to get a list of commands.")
-    raise events.StopPropagation
-
-@client.on(events.NewMessage(pattern='/help'))
+    sender = await event.get_sender()
+    user_id = sender.id
+    user_data = {"user_id": user_id, "username": sender.username}
+    
+    # Add user to database
+    add_user(user_id, user_data)
+    
+    await event.respond(f"Hello {sender.username}, welcome to the bot!")
+    
+# /help command
+@bot.on(events.NewMessage(pattern='/help'))
 async def help(event):
-    commands = """
+    help_text = """
+    Available Commands:
     /start - Start the bot
-    /help - List of commands
+    /help - Display this help message
     /welcome - Set welcome message
+    /lock - Lock group content
+    /filter - Add filter words
     """
-    await event.respond(commands)
-    raise events.StopPropagation
-
-if __name__ == '__main__':
-    print("Bot is running...")
-    client.run_until_disconnected()
+    await event.respond(help_text)
