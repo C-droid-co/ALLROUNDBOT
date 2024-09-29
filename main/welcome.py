@@ -90,3 +90,44 @@ async def welcome_new_members(event):
         welcome_message = custom_welcome_message.replace('!name', new_member.first_name)
 
         await event.respond(welcome_message)
+
+# Initialize variables for the welcome button
+welcome_button_active = False
+welcome_button_url = ""
+
+@client.on(events.NewMessage(pattern='/welcome_btn'))
+async def set_welcome_button(event):
+    global welcome_button_active, welcome_button_url
+    command = event.message.message.split(' ', 2)
+    
+    if len(command) < 3:
+        await event.respond("Please provide a command (add/remove) and a URL.")
+        return
+    
+    action = command[1]
+    
+    if action == '++':
+        welcome_button_url = command[2]
+        welcome_button_active = True
+        await event.respond(f"Welcome button activated with URL: {welcome_button_url}")
+    elif action == '--':
+        welcome_button_active = False
+        welcome_button_url = ""
+        await event.respond("Welcome button deactivated.")
+    else:
+        await event.respond("Invalid action. Use '++' to activate or '--' to deactivate.")
+
+@client.on(events.ChatAction)
+async def welcome_new_members(event):
+    if event.user_added or event.user_joined:
+        new_member = event.users[0]
+        group_id = event.chat_id
+        
+        # Use the custom welcome message
+        welcome_message = custom_welcome_message.replace('!name', new_member.first_name)
+
+        if welcome_button_active:
+            buttons = [[Button.url("Join Now", welcome_button_url)]]
+            await event.respond(welcome_message, buttons=buttons)
+        else:
+            await event.respond(welcome_message)
