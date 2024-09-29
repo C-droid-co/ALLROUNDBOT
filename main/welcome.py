@@ -164,3 +164,40 @@ async def welcome_new_members(event):
             # Wait for 10 seconds (or your desired duration) and delete the message
             await asyncio.sleep(10)  # Change the number to your desired time in seconds
             await message.delete()
+
+from datetime import datetime
+
+# Initialize show_time_and_date variable
+show_time_and_date = True
+
+@client.on(events.NewMessage(pattern='/open Welcome date'))
+async def activate_show_time(event):
+    global show_time_and_date
+    show_time_and_date = True
+    await event.respond("Time and date will now be shown in welcome messages.")
+
+@client.on(events.NewMessage(pattern='/lock Welcome date'))
+async def deactivate_show_time(event):
+    global show_time_and_date
+    show_time_and_date = False
+    await event.respond("Time and date will no longer be shown in welcome messages.")
+
+@client.on(events.ChatAction)
+async def welcome_new_members(event):
+    if event.user_added or event.user_joined:
+        new_member = event.users[0]
+        group_id = event.chat_id
+        
+        # Use the custom welcome message
+        welcome_message = custom_welcome_message.replace('!name', new_member.first_name)
+        
+        # Check if time and date should be shown
+        if show_time_and_date:
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            welcome_message += f"\nCurrent Time: {current_time}"
+        
+        message = await event.respond(welcome_message)
+        
+        if auto_delete_welcome:
+            await asyncio.sleep(10)  # Change the number to your desired time in seconds
+            await message.delete()
