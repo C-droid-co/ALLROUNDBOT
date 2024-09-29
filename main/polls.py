@@ -62,3 +62,20 @@ async def show_poll_results(event):
         await event.respond(f"Poll Results:\n{results_message}")
     else:
         await event.respond("No poll results available.")
+
+# Command to create a poll
+@client.on(events.NewMessage(pattern='!poll (.+)'))
+async def create_poll(event):
+    poll_data = event.message.text.split(maxsplit=1)[1]
+    question, *options = poll_data.split(';')
+    # Code to create a poll message with options
+    options_message = "\n".join([f"{index + 1}. {option.strip()}" for index, option in enumerate(options)])
+    poll_message = f"Poll: {question}\nOptions:\n{options_message}"
+    await event.respond(poll_message)
+
+# Command to vote in a poll
+@client.on(events.NewMessage(pattern='!vote (\d+)'))
+async def vote(event):
+    vote_number = event.message.text.split(maxsplit=1)[1]
+    # Code to save the vote in the database or file
+    await event.respond(f"Vote registered: Option {vote_number}")
