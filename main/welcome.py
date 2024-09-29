@@ -131,3 +131,36 @@ async def welcome_new_members(event):
             await event.respond(welcome_message, buttons=buttons)
         else:
             await event.respond(welcome_message)
+
+
+import asyncio
+
+# Initialize auto-delete variable
+auto_delete_welcome = True
+
+@client.on(events.NewMessage(pattern='/open_Deletewelcome'))
+async def activate_auto_delete(event):
+    global auto_delete_welcome
+    auto_delete_welcome = True
+    await event.respond("Auto delete for welcome messages activated.")
+
+@client.on(events.NewMessage(pattern='/lock_Deletewelcome'))
+async def deactivate_auto_delete(event):
+    global auto_delete_welcome
+    auto_delete_welcome = False
+    await event.respond("Auto delete for welcome messages deactivated.")
+
+@client.on(events.ChatAction)
+async def welcome_new_members(event):
+    if event.user_added or event.user_joined:
+        new_member = event.users[0]
+        group_id = event.chat_id
+        
+        # Use the custom welcome message
+        welcome_message = custom_welcome_message.replace('!name', new_member.first_name)
+        message = await event.respond(welcome_message)
+        
+        if auto_delete_welcome:
+            # Wait for 10 seconds (or your desired duration) and delete the message
+            await asyncio.sleep(10)  # Change the number to your desired time in seconds
+            await message.delete()
